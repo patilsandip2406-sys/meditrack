@@ -9,8 +9,6 @@ const appointmentSchema = new mongoose.Schema({
   notes: { type: String }
 }, { timestamps: true });
 
-// Compound index: fast lookups of "this doctor's appointments on this date"
-// -- also the exact shape used by the double-booking check in the service layer.
 appointmentSchema.index({ doctor: 1, date: 1 });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);
