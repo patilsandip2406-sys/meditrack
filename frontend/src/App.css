@@ -1,0 +1,10 @@
+body { font-family: system-ui, sans-serif; background: #f4f6f8; margin: 0; }
+.app { max-width: 900px; margin: 0 auto; padding: 1rem; }
+header { display: flex; align-items: center; gap: 1rem; justify-content: space-between; }
+.card { background: white; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.inline-form { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.inline-form input, .inline-form select { padding: 0.4rem; }
+ul { list-style: none; padding: 0; }
+li { padding: 0.4rem 0; border-bottom: 1px solid #eee; }
+.error { color: #c0392b; }
+.hint { font-size: 0.8rem; color: #777; }
