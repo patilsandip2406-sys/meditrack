@@ -7,8 +7,13 @@ const withRelations = {
   doctor: { select: { name: true, specialization: true } }
 };
 
-exports.findAll = () =>
-  prisma.appointment.findMany({ include: withRelations, orderBy: { date: 'asc' } });
+exports.findAll = ({ skip, limit, where, orderBy, select }) =>
+  prisma.appointment.findMany({
+    where, skip, take: limit, orderBy,
+    ...(select ? { select } : { include: withRelations })
+  });
+
+exports.count = (where) => prisma.appointment.count({ where });
 
 exports.findConflict = (doctorId, date) =>
   prisma.appointment.findFirst({

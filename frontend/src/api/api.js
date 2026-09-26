@@ -1,32 +1,66 @@
-// Attaches the JWT (from localStorage) to every request automatically.
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/v1`;
 
 async function request(path, options = {}) {
   const token = localStorage.getItem('token');
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const response = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers
     }
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Request failed');
+
+  const text = await response.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = { message: text || 'Request failed' };
+  }
+
+  if (!response.ok) throw new Error(data?.message || 'Request failed');
   return data;
 }
 
-export const login = (email, password) =>
-  request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+const json = (method, value) => ({ method, body: JSON.stringify(value) });
 
-export const getPatients = () => request('/patients');
-export const createPatient = (patient) =>
-  request('/patients', { method: 'POST', body: JSON.stringify(patient) });
+export const login = (email, password) => request('/auth/login', json('POST', { email, password }));
+export const getDashboard = () => request('/reports/dashboard');
+export const getNotifications = () => request('/notifications?limit=8');
+export const markNotificationRead = (id) => request(`/notifications/${id}/read`, { method: 'PATCH' });
 
-export const getDoctors = () => request('/doctors');
-export const createDoctor = (doctor) =>
-  request('/doctors', { method: 'POST', body: JSON.stringify(doctor) });
+export const resourceApi = {
+  patients: {
+    path: '/patients',
+    list: (query = '') => request(`/patients?${query}`),
+    create: (record) => request('/patients', json('POST', record)),
+    update: (id, record) => request(`/patients/${id}`, json('PUT', record)),
+    remove: (id) => request(`/patients/${id}`, { method: 'DELETE' }),
+    export: () => request('/bulk/patients/export')
+  },
+  doctors: {
+    path: '/doctors',
+    list: (query = '') => request(`/doctors?${query}`),
+    create: (record) => request('/doctors', json('POST', record)),
+    update: (id, record) => request(`/doctors/${id}`, json('PUT', record)),
+    remove: (id) => request(`/doctors/${id}`, { method: 'DELETE' }),
+    export: () => request('/bulk/doctors/export')
+  },
+  appointments: {
+    path: '/appointments',
+    list: (query = '') => request(`/appointments?${query}`),
+    create: (record) => request('/appointments', json('POST', record)),
+    update: (id, record) => request(`/appointments/${id}`, json('PUT', record)),
+    remove: (id) => request(`/appointments/${id}`, { method: 'DELETE' }),
+    export: () => request('/bulk/appointments/export')
+  }
+};
 
-export const getAppointments = () => request('/appointments');
-export const createAppointment = (appt) =>
-  request('/appointments', { method: 'POST', body: JSON.stringify(appt) });
+export const getReferenceData = async () => {
+  const [patients, doctors] = await Promise.all([
+    resourceApi.patients.list('limit=100&sort=name'),
+    resourceApi.doctors.list('limit=100&sort=name')
+  ]);
+  return { patients: patients.data || [], doctors: doctors.data || [] };
+};

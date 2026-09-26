@@ -1,7 +1,24 @@
 const appointmentRepo = require('../repositories/appointmentRepository');
 const ApiError = require('../utils/ApiError');
+const { parseListQuery } = require('../utils/listQuery');
 
-exports.listAppointments = () => appointmentRepo.findAll();
+const appointmentFields = {
+  id: 'number', patientId: 'number', doctorId: 'number', date: 'date', reason: 'string',
+  status: 'string', notes: 'string', createdAt: 'date', updatedAt: 'date'
+};
+
+exports.listAppointments = async (query) => {
+  const options = parseListQuery(query, {
+    fields: appointmentFields,
+    searchFields: ['reason', 'status'],
+    defaultSort: 'date'
+  });
+  const [appointments, total] = await Promise.all([
+    appointmentRepo.findAll(options),
+    appointmentRepo.count(options.where)
+  ]);
+  return { appointments, total, page: options.page, limit: options.limit, pages: Math.ceil(total / options.limit) };
+};
 
 exports.createAppointment = async (data) => {
   // Business rule: a doctor cannot have two active appointments

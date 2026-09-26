@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/meditrack-client"
 }
 
 datasource db {
@@ -31,6 +32,7 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(receptionist)
+  notifications Notification[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -79,4 +81,16 @@ model Appointment {
   updatedAt DateTime          @updatedAt
 
   @@index([doctorId, date])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   @default("info")
+  message   String
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, readAt, createdAt])
 }

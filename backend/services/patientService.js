@@ -1,13 +1,23 @@
 const patientRepo = require('../repositories/patientRepository');
 const ApiError = require('../utils/ApiError');
+const { parseListQuery } = require('../utils/listQuery');
 
-exports.listPatients = async ({ page = 1, limit = 20, search }) => {
-  const skip = (page - 1) * limit;
+const patientFields = {
+  id: 'number', name: 'string', dob: 'date', gender: 'string', bloodGroup: 'string',
+  phone: 'string', address: 'string', medicalHistory: 'array', createdAt: 'date', updatedAt: 'date'
+};
+
+exports.listPatients = async (query) => {
+  const options = parseListQuery(query, {
+    fields: patientFields,
+    searchFields: ['name', 'phone', 'bloodGroup'],
+    defaultSort: '-createdAt'
+  });
   const [patients, total] = await Promise.all([
-    patientRepo.findAll({ skip, limit: Number(limit), search }),
-    patientRepo.count(search)
+    patientRepo.findAll(options),
+    patientRepo.count(options.where)
   ]);
-  return { patients, total, page: Number(page), pages: Math.ceil(total / limit) };
+  return { patients, total, page: options.page, limit: options.limit, pages: Math.ceil(total / options.limit) };
 };
 
 exports.getPatient = async (id) => {
